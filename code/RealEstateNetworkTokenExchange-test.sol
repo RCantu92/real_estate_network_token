@@ -3,24 +3,18 @@ pragma solidity ^0.5.0;
 import "./RealEstateNetworkTokenOG2.sol";
 
 // Contract to serve as the marketplace for 
-// RENTs (RealEstateTokenNetwork)
-contract RealEstateTokenExchange is RealEstateNetworkToken {
+// RENTs (RealEstateTokenNetwork) after importing
+// RealEstateNetworkTokenContract
+contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     
-    // Completed: Can create a new listing
-    // and bid on existing
-    // Working on: Cancelling a Listing, cancelList() also approveAndTransfer();
-    // Finalizing a sale of listing
-    // Next: Comparing code to MasteringEth to add tokenId/_tokenId
-    // Where necessary.
-    
-    
-    // Array with all auctions
+    // Array with all listings, which
+    // are structs
     Listing[] public listings;
     
     // Mapping from listing index to user bids
     mapping(uint256 => Bid[]) public listingBids;
     
-    // Mapping from owner to a list of owned auctions
+    // Mapping from owner to a list of owned listings
     mapping(address => uint[]) public listingOwner;
     
     // Bid struct to hold bidder and amount
@@ -29,22 +23,43 @@ contract RealEstateTokenExchange is RealEstateNetworkToken {
         uint256 amount;
     }
     
-    // Sale struct which holds all the required info
+    // Listing struct which holds all the required info
     struct Listing {
-        uint256 saleClosingDate;
+        // need "name" property:
+        uint256 saleClosingDate; // *FIGURE OUT HOW TO INPUT DATE FORMAT FOR USER
         uint256 price;
-        uint256 realEstateId;
+        // need "metadata" property?
         uint256 tokenId;
         address realEstateNetworkTokenContractAddress;
-        address owner;
+        address payable owner;
         bool active;
         bool finalized;
     }
     
-    // BidSuccess is fired when a new bid is created
+    /**
+    * @dev Guarantees this contract is owner of the given token
+    * @param _realEstateNetworkTokenContractAddress address of the RENT contract to validate from
+    * @param _tokenId uint256 ID of the token which has been registered in the RENT contract
+    */
+    modifier contractIsTokenOwner(address _realEstateNetworkTokenContractAddress, uint256 _tokenId) {
+        address tokenOwner = RealEstateNetworkTokenContract(_realEstateNetworkTokenContractAddress).ownerOf(_tokenId);
+        require(tokenOwner == address(this));
+        _;
+    }
+    
+    /**
+    * @dev Guarantees msg.sender is owner of the given listing
+    * @param _listingId uint ID of the listing to validate its ownership belongs to msg.sender
+    */
+    modifier isOwner(uint _listingId) {
+        require(listings[_listingId].owner == msg.sender);
+        _;
+    }
+    
+    // BidSuccess is fired when a new bid is accepted
     event BidSuccess(address _from, uint _listingId);
     
-    // SaleCreated is fired when an sale is created
+    // ListingCreated is fired when an listing is created
     event ListingCreated(address _owner, uint _listingId);
     
     // AuctionCanceled is fired when an auction is canceled
@@ -54,18 +69,31 @@ contract RealEstateTokenExchange is RealEstateNetworkToken {
     event ListingFinalized(address _owner, uint _listingId);
     
     /**
+    * @dev Disallow payments to this contract directly
+    */
+    function() external {
+        revert();
+    }
+    
+    /**
     * @dev Creates a listing with the given parameters
+    * @param _realEstateNetworkTokenContractAddress address of RealEstateNetworkTokenContract
+    * @param _tokenId uint256 of the token created in RealEstateNetworkTokenContract
     * @param _realEstateId uint256 as the unique identifier for each listing
     * @param _price uint256 price of the listing
     * @param _saleClosingDate uint date at which the listing will be taken down
     * @return bool whether the listing is created
     */
-    function createListing(address _realEstateNetworkTokenContractAddress, uint256 _tokenId, uint256 _realEstateId, uint256 _price, uint _saleClosingDate) public returns(bool) {
+    function createListing(address _realEstateNetworkTokenContractAddress,
+        uint256 _tokenId,
+        uint256 _realEstateId,
+        uint256 _price,
+        uint _saleClosingDate
+    ) public contractIsTokenOwner(_realEstateNetworkTokenContractAddress, _tokenId) returns(bool) {
         uint listingId = listings.length;
         Listing memory newListing;
         newListing.saleClosingDate = _saleClosingDate;
         newListing.price = _price;
-        newListing.realEstateId = _realEstateId;
         newListing.tokenId = _tokenId;
         newListing.realEstateNetworkTokenContractAddress = _realEstateNetworkTokenContractAddress;
         newListing.owner = msg.sender;
@@ -85,12 +113,13 @@ contract RealEstateTokenExchange is RealEstateNetworkToken {
     * @dev Bidder is refunded with the initial amount
     * @param _from address of owner
     * @param _to address of recipient
-    * @param _realEstateId uint ID of the created listing
+    * @param _tokenId uint ID of the created token
+    * @return bool whether the listing is approved
     */
     function approveAndTransfer(address _from, address _to, address _realEstateNetworkTokenContractAddress, uint256 _tokenId) internal returns(bool) {
-        RealEstateNetworkTokenContract tempToken = RealEstateNetworkTokenContract(__realEstateNetworkTokenContractAddress);
-        tempToken.approve(_to, _tokenId);
-        tempToken.transferFrom(_from, _to, _tokenId);
+        RealEstateNetworkTokenContract tempContract = RealEstateNetworkTokenContract(_realEstateNetworkTokenContractAddress);
+        tempContract.approve(_to, _tokenId);
+        tempContract.transferFrom(_from, _to, _tokenId);
         return true;
     }
     
@@ -100,12 +129,12 @@ contract RealEstateTokenExchange is RealEstateNetworkToken {
     * @dev Bidder is refunded with the initial amount
     * @param _listingId uint ID of the created listing
     */
-    function cancelListing(uint _listingId) public {
+    function cancelListing(uint _listingId) public isOwner(_listingId) {
         Listing memory myListing = listings[_listingId];
         uint bidsLength = listingBids[_listingId].length;
 
         // if there are bids refund the last bid
-        if( bidsLength > 0 ) {
+        if(bidsLength > 0) {
             Bid memory lastBid = listingBids[_listingId][bidsLength - 1];
             if(!lastBid.from.send(lastBid.amount)) {
                 revert();
@@ -122,7 +151,7 @@ contract RealEstateTokenExchange is RealEstateNetworkToken {
     /**
     * @dev Finalized the closing of a listing
     * @dev The listing should be completed, and there should be at least one bid
-    * @dev On success token is transfered to bidder and auction owner gets the amount
+    * @dev On success, token is transfered to bidder and listing owner gets the amount
     * @param _listingId uint ID of the created listing
     */
     function finalizeListing(uint _listingId) public {
@@ -139,7 +168,7 @@ contract RealEstateTokenExchange is RealEstateNetworkToken {
 
             // 2. the money goes to the auction owner
             Bid memory lastBid = listingBids[_listingId][bidsLength - 1];
-            if(!mListing.owner.send(lastBid.amount)) {
+            if(!myListing.owner.send(lastBid.amount)) {
                 revert();
             }
 
@@ -156,12 +185,12 @@ contract RealEstateTokenExchange is RealEstateNetworkToken {
     * @dev Bidder sends bid on an auction
     * @dev Listing should be active and not ended
     * @dev Refund previous bidder if a new bid is valid and placed.
-    * @param _listingId uint ID of the created auction
+    * @param _listingId uint ID of the created listing
     */
     function bidOnListing(uint _listingId) external payable {
         uint256 newBidAmount = msg.value;
 
-        // Owner should be unable to bid on listing
+        // Owner should be unable to bid on own listing
         Listing memory myListing = listings[_listingId];
         if(myListing.owner == msg.sender) revert();
 
