@@ -1,0 +1,12 @@
+property_code,owner_code,street_address,zip_code,subdivision,legal_description,bedrooms,full_baths,half_baths,garage,stories,year_built,building_sqft,lot_sqft,annual_maintenance_fee,token_hash
+69005592,11,17007 Makanda Drive,77433,Bridgeland - Lakeland Heights,LT 11 BLK 3 BRIDGELAND LAKELAND HEIGHTS SEC 5,3,3,0,2 / Attached,1.5,2015,2678,7545,1150,
+31532564,10,14635 N Raleighs Meadow Court N,77433,Fairfield Village South Sec 15,LT 1 BLK 1 FAIRFIELD VILLAGE SOUTH SEC 15,5,4,0,2 / Attached,2,2015,3064,8118,300,
+75112555,9,13521 Mason Canyon Lane,77584,Southlake,LOT 07 BLOCK 01,4,3,1,2 / Attached,2,2020,2797,8447,1090,
+47862937,8,11225 Elbect Drive,77035,Post Oak Manor Sec 05,LT 18 BLK 4 POST OAK MANOR SEC 5,3,2,0,2 / Attached,1,1957,1495,7440,,
+70062315,7,4122 Levonshire Drive,77025,Woodhsire Sec 02,LT 19 BLK 3 WOODSHIRE SEC 2,4,4,1,2 / Attached,2,2019,3656,10050,370,
+27038983,6,5326 Paisley Street,77096,Meyerland R/P H,LT 7 BLK 23 MEYERLAND SEC 8 R/P H,5,5,2,3 / Attached,2,2019,5529,11555,550,
+76438395,5,4710 Shetland Lane,77027,Afton Oaks Sec 05,LT 12 BLK 2 AFTON OAKS SEC 5,5,5,0,2 / Attached,2,2019,5224,8160,830,
+3331175,4,3712 Darcus Street,77005,Southside Place,TRS 19 & 20A BLK 5 SOUTHSIDE PLACE,5,5,1,2 / Attached,2,2019,5590,9375,,
+28709384,3,2535 Inwood Drive,77019,River Oaks,LT 2 BLK 36 RIVER OAKS SEC 1,5,6,3,4 / Attached,2,2019,8116,23992,2510,
+21684948,2,3229 Groveland Lane,77019,River Oaks,TRS 4A & 5 BLK 12 RIVER OAKS COUNTRY CLUB ESTATE,4,5,2,4 / Detached,3,1935,7098,,3120,
+44843980,1,1314 South Boulevard,77006,Broadacres,LT 24 BROADACRES,5,5,2,3 / Attached,2,2011,16454,37260,4000,
