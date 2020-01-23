@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./RealEstateNetworkTokenOG2.sol";
+import "./RealEstateNetworkTokenContract.sol";
 
 // Contract to serve as the marketplace for 
 // RENTs (RealEstateTokenNetwork) after importing
@@ -25,10 +25,9 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     
     // Listing struct which holds all the required info
     struct Listing {
-        // need "name" property:
-        uint256 saleClosingDate; // *FIGURE OUT HOW TO INPUT DATE FORMAT FOR USER
+        uint256 saleClosingDate;
         uint256 price;
-        // need "metadata" property?
+        string metadata;
         uint256 tokenId;
         address realEstateNetworkTokenContractAddress;
         address payable owner;
@@ -79,14 +78,12 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     * @dev Creates a listing with the given parameters
     * @param _realEstateNetworkTokenContractAddress address of RealEstateNetworkTokenContract
     * @param _tokenId uint256 of the token created in RealEstateNetworkTokenContract
-    * @param _realEstateId uint256 as the unique identifier for each listing
     * @param _price uint256 price of the listing
     * @param _saleClosingDate uint date at which the listing will be taken down
     * @return bool whether the listing is created
     */
     function createListing(address _realEstateNetworkTokenContractAddress,
         uint256 _tokenId,
-        uint256 _realEstateId,
         uint256 _price,
         uint _saleClosingDate
     ) public contractIsTokenOwner(_realEstateNetworkTokenContractAddress, _tokenId) returns(bool) {
