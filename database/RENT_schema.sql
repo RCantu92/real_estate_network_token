@@ -25,14 +25,14 @@ CREATE TABLE tblbuyer_info (
 CREATE TABLE tblsale_info (
 	sale_code SERIAL PRIMARY KEY,
 	status_code INT NOT NULL,
-	owner_code INT NOT NULL,
+	property_code INT NOT NULL,
 	listing_price MONEY,
 	sale_price MONEY,
 	buyer_code INT,
 	sale_date DATE,
 	transaction_hash VARCHAR (50),
 	FOREIGN KEY (status_code) REFERENCES tblstatus_codes(status_code),
-	FOREIGN KEY (owner_code) REFERENCES tblowner_info(owner_code),
+	FOREIGN KEY (property_code) REFERENCES tblproperty_info(property_code),
 	FOREIGN KEY (buyer_code) REFERENCES tblbuyer_info(buyer_code)
 );
 
