@@ -7,6 +7,10 @@ import "./RealEstateNetworkTokenContract.sol";
 // RealEstateNetworkTokenContract
 contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     
+    // Setting up the contract owner
+    // upon contract creation
+    address OWNER = msg.sender;
+    
     // Array with all listings, which
     // are structs
     Listing[] public listings;
@@ -29,20 +33,16 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
         uint256 price;
         string metadata;
         uint256 tokenId;
-        address realEstateNetworkTokenContractAddress;
         address payable owner;
         bool active;
         bool finalized;
     }
     
     /**
-    * @dev Guarantees this contract is owner of the given token
-    * @param _realEstateNetworkTokenContractAddress address of the RENT contract to validate from
-    * @param _tokenId uint256 ID of the token which has been registered in the RENT contract
+    * @dev Guarantees msg.sender qualified to create listings
     */
-    modifier contractIsTokenOwner(address _realEstateNetworkTokenContractAddress, uint256 _tokenId) {
-        address tokenOwner = RealEstateNetworkTokenContract(_realEstateNetworkTokenContractAddress).ownerOf(_tokenId);
-        require(tokenOwner == address(this));
+    modifier isContractOwner() {
+        require(OWNER == msg.sender);
         _;
     }
     
@@ -76,23 +76,16 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     
     /**
     * @dev Creates a listing with the given parameters
-    * @param _realEstateNetworkTokenContractAddress address of RealEstateNetworkTokenContract
     * @param _tokenId uint256 of the token created in RealEstateNetworkTokenContract
     * @param _price uint256 price of the listing
-    * @param _saleClosingDate uint date at which the listing will be taken down
     * @return bool whether the listing is created
     */
-    function createListing(address _realEstateNetworkTokenContractAddress,
-        uint256 _tokenId,
-        uint256 _price,
-        uint _saleClosingDate
-    ) public contractIsTokenOwner(_realEstateNetworkTokenContractAddress, _tokenId) returns(bool) {
+    function createListing(uint256 _tokenId, uint256 _price) public isContractOwner() returns(bool) {
         uint listingId = listings.length;
         Listing memory newListing;
-        newListing.saleClosingDate = _saleClosingDate;
+        newListing.saleClosingDate = now + 2 minutes;
         newListing.price = _price;
         newListing.tokenId = _tokenId;
-        newListing.realEstateNetworkTokenContractAddress = _realEstateNetworkTokenContractAddress;
         newListing.owner = msg.sender;
         newListing.active = true;
         newListing.finalized = false;
@@ -101,22 +94,6 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
         listingOwner[msg.sender].push(listingId);
         
         emit ListingCreated(msg.sender, listingId);
-        return true;
-    }
-    
-    /**
-    * @dev Approves and transfers
-    * @dev token is transfered back to the listing owner
-    * @dev Bidder is refunded with the initial amount
-    * @param _from address of owner
-    * @param _to address of recipient
-    * @param _tokenId uint ID of the created token
-    * @return bool whether the listing is approved
-    */
-    function approveAndTransfer(address _from, address _to, address _realEstateNetworkTokenContractAddress, uint256 _tokenId) internal returns(bool) {
-        RealEstateNetworkTokenContract tempContract = RealEstateNetworkTokenContract(_realEstateNetworkTokenContractAddress);
-        tempContract.approve(_to, _tokenId);
-        tempContract.transferFrom(_from, _to, _tokenId);
         return true;
     }
     
@@ -139,10 +116,8 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
         }
 
         // approve and transfer from this contract to auction owner
-        if(approveAndTransfer(address(this), myListing.owner, myListing.realEstateNetworkTokenContractAddress, myListing.tokenId)){
-            listings[_listingId].active = false;
-            emit ListingCanceled(msg.sender, _listingId);
-        }
+        listings[_listingId].active = false;
+        emit ListingCanceled(msg.sender, _listingId);
     }
     
     /**
@@ -163,18 +138,17 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
             cancelListing(_listingId);
         }else{
 
-            // 2. the money goes to the auction owner
+            // 2. the money goes to the listing owner
             Bid memory lastBid = listingBids[_listingId][bidsLength - 1];
             if(!myListing.owner.send(lastBid.amount)) {
                 revert();
             }
 
-            // approve and transfer from this contract to the bid winner 
-            if(approveAndTransfer(address(this), lastBid.from, myListing.realEstateNetworkTokenContractAddress, myListing.tokenId)){
-                listings[_listingId].active = false;
-                listings[_listingId].finalized = true;
-                emit ListingFinalized(msg.sender, _listingId);
-            }
+            // 3. approve and transfer from this owner to the bid winner
+            myListing.owner = lastBid.from;
+            myListing.active = false;
+            myListing.finalized = true;
+            emit ListingFinalized(msg.sender, _listingId);
         }
     }
     
@@ -220,5 +194,17 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
         newBid.amount = newBidAmount;
         listingBids[_listingId].push(newBid);
         emit BidSuccess(msg.sender, _listingId);
+    }
+    
+    /**
+    * @dev Gets the address of the owner of the token
+    * @param _tokenId ID of the token
+    * @param _listingId the ID of the listing
+    */
+    function ownerOfToken(uint _tokenId, uint _listingId) view public returns(address) {
+        Listing memory myListing = listings[_listingId];
+        require(myListing.tokenId == _tokenId, "The provided token ID is incorrect.");
+        address tokenOwner = myListing.owner;
+        return tokenOwner;
     }
 }
