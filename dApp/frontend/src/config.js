@@ -1,5 +1,5 @@
-var DeedRepository = require('./contracts/DeedRepository')
-var AuctionRepository = require('./contracts/AuctionRepository')
+var RealEstateNetworkTokenContract = require('../../code/RealEstateNetworkTokenContract.sol')
+var RealEstateNetworkTokenExchange = require('../../code/RealEstateNetworkTokenExchange.sol')
 
 module.exports = {
     JSONRPC_ENDPOINT: 'http://52.59.238.144:8545',
@@ -7,11 +7,11 @@ module.exports = {
     BZZ_ENDPOINT: 'http://52.59.238.144:8500',
     SHH_ENDPOINT: 'ws://52.59.238.144:8546',
 
-    DEEDREPOSITORY_ADDRESS: '0xcED14e25Fc6B5dbaE071232eDda191CFA35874c3',
-    AUCTIONREPOSITORY_ADDRESS: '0x4109613EA8cBc6Fd9CDEbC91Aa65Aa99bd60F72c',
+    REALESTATENETWORKTOKENCONTRACT_ADDRESS: '0xE048BCE0ec53179898e64b7ceE9083cd6433F2D3',
+    REALESTATENETWORKTOKENEXCHANGE_ADDRESS: '0xdCbD989AC0ED112Fd3fF8281Ee63AF759E43A214',
 
-    DEEDREPOSITORY_ABI: DeedRepository.abi,
-    AUCTIONREPOSITORY_ABI: AuctionRepository.abi,
+    REALESTATENETWORKTOKENCONTRACT_ABI: RealEstateNetworkTokenContract.abi,
+    REALESTATENETWORKTOKENEXCHANGE_ABI: RealEstateNetworkTokenExchange.abi,
 
     GAS_AMOUNT: 500000,
 

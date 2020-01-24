@@ -13,13 +13,13 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     
     // Array with all listings, which
     // are structs
-    Listing[] public listings;
+    Listing[] internal listings;
     
-    // Mapping from listing index to user bids
-    mapping(uint256 => Bid[]) public listingBids;
+    // Mapping from listing listingId to user bids
+    mapping(uint256 => Bid[]) internal listingBids;
     
     // Mapping from owner to a list of owned listings
-    mapping(address => uint[]) public listingOwner;
+    mapping(address => uint[]) internal listingOwner;
     
     // Bid struct to hold bidder and amount
     struct Bid {
@@ -126,7 +126,7 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     * @dev On success, token is transfered to bidder and listing owner gets the amount
     * @param _listingId uint ID of the created listing
     */
-    function finalizeListing(uint _listingId) public {
+    function finalizeListing(uint _listingId) public isOwner(_listingId) {
         Listing memory myListing = listings[_listingId];
         uint bidsLength = listingBids[_listingId].length;
 
@@ -145,7 +145,7 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
             }
 
             // 3. approve and transfer from this owner to the bid winner
-            myListing.owner = lastBid.from;
+            _transferFrom(myListing.owner, lastBid.from, myListing.tokenId);
             myListing.active = false;
             myListing.finalized = true;
             emit ListingFinalized(msg.sender, _listingId);
@@ -153,7 +153,7 @@ contract RealEstateNetworkTokenExchange is RealEstateNetworkTokenContract {
     }
     
     /**
-    * @dev Bidder sends bid on an auction
+    * @dev Bidder sends bid on an listing
     * @dev Listing should be active and not ended
     * @dev Refund previous bidder if a new bid is valid and placed.
     * @param _listingId uint ID of the created listing
